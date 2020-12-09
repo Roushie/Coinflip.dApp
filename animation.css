@@ -1,0 +1,60 @@
+body {
+background-color: #f9f8f8;
+font-family: 'VT323', monospace;
+font-size: 20px;
+}
+
+.btn-custom {
+  color: #f3de8a;
+  background-color: #272838;
+  border-color: #272838;
+}
+
+.btn-custom:hover {
+  color: #f3de8a;
+  font-weight: bold;
+  background-color: #5a6268;
+  border-color: #545b62;
+}
+
+.btn-custom:not(:disabled):not(.disabled):active:focus, .btn-custom:not(:disabled):not(.disabled).active:focus,
+.show > .btn-custom.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(130, 138, 145, 0.5);
+}
+
+.btn-custom:focus, .btn-custom.focus {
+  box-shadow: none;
+  color: #f3de8a;
+  font-weight: bold;
+  background-color: #272838;
+  border-color: #272838;
+}
+
+
+.centered {
+width: 100%;
+margin: auto;
+text-align: center;
+}
+
+h3 {
+padding: 10px;
+color: #f3de8a;
+background-color: #272838;
+}
+
+
+#flipresult {
+  font-size: 18px;
+  font-weight: bold;
+
+}
+
+#ethlogo {
+width: 200px;
+margin-bottom: 20px;
+}
+
+@keyframes test {
+  to {transform: rotateY(1080deg);} /*Can do animations with just a single line of code instead of setting keyframes individually at certain %*/
+}
