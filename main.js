@@ -26,8 +26,6 @@ async function createBet(){
 
   let betamount = parseInt(web3.utils.toWei($("#flipamount").val())) //Had a bug here, because web3 functions often return strings; I thought I was comparing numbers, but I was actually comparing strings.
   let contractbalance = parseInt(await web3.eth.getBalance(flipContract.options.address))
-  console.log(betamount)
-  console.log(contractbalance)
   if (contractbalance < betamount){ // We don't let the user make a bet, if the contract doesn't have the balance to pay out a win.
     $("#flipresult").text("Insufficient contract balance to accept this bet. Maximum bet is: "
     + web3.utils.fromWei(`${contractbalance}`, "ether") + " ETH")
