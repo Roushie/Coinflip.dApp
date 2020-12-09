@@ -4,15 +4,21 @@ pragma solidity 0.6.12;
 
 contract Coinflip is Ownable, usingProvable {
 
+constructor () public payable {
+  provable_setProof(proofType_Ledger);
+} // Payable because we want to deploy with ether.
+
+  bytes public resulttest;
+
   struct Bet { // We use this struct to map query IDs to bet data.
     address payable bettor_address;
     uint256 betamount;
     uint256 flipresult;
   }
 
-  mapping (bytes32 => Bet) queries; //Create the mapping where we are gonna store every queryID and the result corresponding to that ID. When we get the ID we need to push it to the mapping.
+  mapping (bytes32 => Bet) queries; //Create the mapping where we are gonna store every queryID and the player address, bet amount and result corresponding to that ID.
 
-  event QueryInitiated (
+  event QueryInitiated ( // Emit event with query ID for JS to listen for.
     bytes32 InitialQueryID
   );
 
@@ -23,27 +29,26 @@ contract Coinflip is Ownable, usingProvable {
     bytes proof
   );
 
-  function __callback(bytes32 _queryId, string memory _result, bytes memory _proof) internal {
-    //require(msg.sender == provable_cbAddress()); - enable this later when converting to actual orcale
+  function __callback(bytes32 _queryId, string memory _result, bytes memory _proof) public {
+    require(msg.sender == provable_cbAddress());
+    require(provable_randomDS_proofVerify__returnCode(_queryId,_result,_proof) == 0); // Require that the proof check passes.
+    resulttest = bytes(_result);
     uint256 randomnumber = uint256(keccak256(abi.encodePacked(_result))) % 2; // Takes the result, encodes it, hashes it, converts it to an integer and returns either 0 or 1 if its even / odd respectively.
-    queries[_queryId].flipresult = randomnumber; //Now we have the result of the flip - let's say 1 == win
-    if (queries[_queryId].flipresult == 1){
+    queries[_queryId].flipresult = randomnumber; //Now we have the result of the flip - let's say 1 == win. We store it in the mapping.
+    if (queries[_queryId].flipresult == 1){ // Pay out double 50% of the time.
       queries[_queryId].bettor_address.transfer(queries[_queryId].betamount * 2);
     }
-    emit QueryCompleted(_queryId, queries[_queryId].betamount, queries[_queryId].flipresult, _proof);
+    emit QueryCompleted(_queryId, queries[_queryId].flipresult, queries[_queryId].betamount, _proof); // Here we emit the data we got from the oracle.
   }
 
-  function testRandom() internal returns (bytes32) { //Testing function by Philip so that we can test on localhost. provable_newRandomDSQuery takes 3 parameters, this takes 0.
-    bytes32 queryId = bytes32(keccak256(abi.encodePacked(msg.sender)));
-    __callback(queryId, "1", bytes("test")); // This will eventually be called by the oracle when we get an answer. Here it is called immediately for testing purposes.
-    return queryId;
-  }
-
-  function Flip() public payable { //This is what the user of the dApp calls when they make a bet. 
-    bytes32 queryID = testRandom(); //We get a query ID that is saved into this variable.
-    queries[queryID].bettor_address = msg.sender; //Map bettor address to random number query ID.
-    queries[queryID].betamount = msg.value; //Map bet amount to random number query ID.
-    emit QueryInitiated(queryID); // Emits query ID to track in JS
+  function Flip() public payable { //This is what the user of the dApp calls when they make a bet.
+    if (address(this).balance < (msg.value * 2)){ //Contract balance needs to be twice the size of the bet to pay out a win, so it won't accept bets if it has less than that.
+    revert();
+    }
+    bytes32 queryId = provable_newRandomDSQuery(0, 5, 200000); // Takes delay before execution, number of bytes requested and gas provided for callback as arguments.
+    emit QueryInitiated(queryId); // Emits query ID to track in JS
+    queries[queryId].bettor_address = msg.sender; //Map bettor address to random number query ID.
+    queries[queryId].betamount = msg.value; //Map bet amount to random number query ID.
   }
 
   function withdraw(uint amount) public onlyOwner{ //Withdraws specified amount in wei
